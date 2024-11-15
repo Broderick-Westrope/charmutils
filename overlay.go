@@ -1,4 +1,4 @@
-package btutils
+package charmutils
 
 import (
 	"errors"

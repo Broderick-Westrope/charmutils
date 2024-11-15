@@ -1,4 +1,4 @@
-package btutils_test
+package charmutils_test
 
 import (
 	"testing"
@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Broderick-Westrope/btutils"
+	"github.com/Broderick-Westrope/charmutils"
 )
 
 func TestOverlayCenter(t *testing.T) {
@@ -76,7 +76,7 @@ Nemo animi nisi blanditiis. Eligendi tempora laudantium assumenda nam.`),
 
 	for name, tc := range tt {
 		t.Run(name, func(t *testing.T) {
-			result, err := btutils.OverlayCenter(tc.bg, tc.overlay, tc.ignoreMarginWhitespace)
+			result, err := charmutils.OverlayCenter(tc.bg, tc.overlay, tc.ignoreMarginWhitespace)
 			require.NoError(t, err)
 			assert.Equal(t, tc.want, result)
 		})
@@ -176,7 +176,7 @@ func TestOverlay(t *testing.T) {
 
 	for name, tc := range tt {
 		t.Run(name, func(t *testing.T) {
-			result, err := btutils.Overlay(tc.bg, tc.overlay, tc.row, tc.col, tc.ignoreMarginWhitespace)
+			result, err := charmutils.Overlay(tc.bg, tc.overlay, tc.row, tc.col, tc.ignoreMarginWhitespace)
 			require.NoError(t, err)
 			assert.Equal(t, tc.want, result)
 		})

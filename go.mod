@@ -1,4 +1,4 @@
-module github.com/Broderick-Westrope/btutils
+module github.com/Broderick-Westrope/charmutils
 
 go 1.23.3
 
