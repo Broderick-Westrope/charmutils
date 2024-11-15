@@ -7,6 +7,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// UpdateTypedModel performs an update on the model using the given msg.
+// This enables easily storing models of a concrete type without having the clutter of frequent type assertions.
 func UpdateTypedModel[T tea.Model](model *T, msg tea.Msg) (tea.Cmd, error) {
 	var ok bool
 	newModel, cmd := (*model).Update(msg)
