@@ -1,8 +1,6 @@
 package charmutils
 
 import (
-	"errors"
-	"regexp"
 	"strings"
 	"unicode"
 
@@ -15,6 +13,8 @@ import (
 
 // OverlayCenter writes the overlay string onto the background string such that the middle of the
 // overlay string will be at the middle of the overlay will be at the middle of the background.
+//
+// See Overlay for more.
 func OverlayCenter(bg string, overlay string, ignoreMarginWhitespace bool) (string, error) {
 	row := (lipgloss.Height(bg) - lipgloss.Height(overlay)) / 2
 	row = max(0, row)
@@ -24,13 +24,15 @@ func OverlayCenter(bg string, overlay string, ignoreMarginWhitespace bool) (stri
 }
 
 // Overlay writes the overlay string onto the background string at the specified row and column.
+// Background ANSI escape sequences that would be overwritten are truncated on either side of
+// the overlay lines.
 // In this case, the row and column are zero indexed.
 func Overlay(bg, overlay string, row, col int, ignoreMarginWhitespace bool) (string, error) {
 	bgLines := strings.Split(bg, "\n")
 	overlayLines := strings.Split(overlay, "\n")
 
-	for i, overlayLine := range overlayLines {
-		targetRow := i + row
+	for overlayLineIdx, overlayLine := range overlayLines {
+		targetRow := row + overlayLineIdx
 
 		// Ensure the target row exists in the background lines
 		for len(bgLines) <= targetRow {
@@ -40,22 +42,28 @@ func Overlay(bg, overlay string, row, col int, ignoreMarginWhitespace bool) (str
 		bgLine := bgLines[targetRow]
 		bgLineWidth := ansi.StringWidth(bgLine)
 
+		// Pad the background line with spaces so that it has the required columns
 		if bgLineWidth < col {
-			bgLine += strings.Repeat(" ", col-bgLineWidth) // Add padding
+			bgLine += strings.Repeat(" ", col-bgLineWidth)
+			bgLines[targetRow] = bgLine
 		}
 
-		// Handle ignoreMarginWhitespace
 		if ignoreMarginWhitespace {
-			// Process the overlay line to preserve leading and trailing whitespace
+			// Remove leading and trailing whitespace from the overlay line.
 			overlayLine = removeMarginWhitespace(bgLine, overlayLine, col)
 		}
 
-		bgLeft := ansi.Truncate(bgLine, col, "")
-		bgRight, err := truncateLeft(bgLine, col+ansi.StringWidth(overlayLine))
-		if err != nil {
-			return "", err
+		// Get the left part of the background line (up to the column)
+		bgLeft := ansi.TruncateWc(bgLine, col, "")
+
+		// Get the right part of the background line (from the column + overlay width)
+		insertPoint := col + ansi.StringWidth(overlayLine)
+		var bgRight string
+		if insertPoint < ansi.StringWidth(bgLine) {
+			bgRight = ansi.TruncateLeftWc(bgLine, insertPoint, "")
 		}
 
+		// Combine the left part, overlay, and right part
 		bgLines[targetRow] = bgLeft + overlayLine + bgRight
 	}
 
@@ -205,25 +213,4 @@ func getBgCharAt(bgLine string, visualIndex int) string {
 	}
 
 	return result.String()
-}
-
-// truncateLeft removes characters from the beginning of a line, considering ANSI escape codes.
-func truncateLeft(line string, padding int) (string, error) {
-	if strings.Contains(line, "\n") {
-		return "", errors.New("line must not contain newline")
-	}
-
-	wrapped := strings.Split(ansi.Hardwrap(line, padding, true), "\n")
-	if len(wrapped) == 1 {
-		return "", nil
-	}
-
-	var ansiStyle string
-	// Regular expression to match ANSI escape codes.
-	ansiStyles := regexp.MustCompile(`\x1b[[\d;]*m`).FindAllString(wrapped[0], -1)
-	if len(ansiStyles) > 0 {
-		ansiStyle = ansiStyles[len(ansiStyles)-1]
-	}
-
-	return ansiStyle + strings.Join(wrapped[1:], ""), nil
 }

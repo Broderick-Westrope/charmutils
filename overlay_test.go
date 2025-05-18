@@ -1,4 +1,4 @@
-package charmutils_test
+package charmutils
 
 import (
 	"testing"
@@ -7,8 +7,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/Broderick-Westrope/charmutils"
 )
 
 func TestOverlayCenter(t *testing.T) {
@@ -76,7 +74,7 @@ Nemo animi nisi blanditiis. Eligendi tempora laudantium assumenda nam.`),
 
 	for name, tc := range tt {
 		t.Run(name, func(t *testing.T) {
-			result, err := charmutils.OverlayCenter(tc.bg, tc.overlay, tc.ignoreMarginWhitespace)
+			result, err := OverlayCenter(tc.bg, tc.overlay, tc.ignoreMarginWhitespace)
 			require.NoError(t, err)
 			assert.Equal(t, tc.want, result)
 		})
@@ -172,11 +170,51 @@ func TestOverlay(t *testing.T) {
 			ignoreMarginWhitespace: true,
 			want:                   "Line 1\nLi***2\nLi***3\nLine 4\nLine 5",
 		},
+		"single line; overlay within ANSI sequence": {
+			bg:                     "Normal \x1b[31mRED TEXT\x1b[0m Normal",
+			overlay:                "***",
+			row:                    0,
+			col:                    9,
+			ignoreMarginWhitespace: false,
+			want:                   "Normal \x1b[31mRE\x1b[0m***\x1b[31mEXT\x1b[0m Normal",
+		},
+		"single line; overlay starts before ANSI sequence": {
+			bg:                     "Normal \x1b[31mRED TEXT\x1b[0m Normal",
+			overlay:                "*****",
+			row:                    0,
+			col:                    5,
+			ignoreMarginWhitespace: false,
+			want:                   "Norma*****\x1b[31m TEXT\x1b[0m Normal",
+		},
+		"single line; overlay ends after ANSI sequence": {
+			bg:                     "Normal \x1b[31mRED TEXT\x1b[0m Normal",
+			overlay:                "*****",
+			row:                    0,
+			col:                    12,
+			ignoreMarginWhitespace: false,
+			want:                   "Normal \x1b[31mRED T\x1b[0m*****ormal",
+		},
+		"single line; multiple ANSI sequences": {
+			bg:                     "Normal \x1b[31mRED\x1b[0m \x1b[32mGREEN\x1b[0m Normal",
+			overlay:                "*****",
+			row:                    0,
+			col:                    9,
+			ignoreMarginWhitespace: false,
+			want:                   "Normal \x1b[31mRE\x1b[0m*****\x1b[32mEN\x1b[0m Normal",
+		},
+		"multi-line; ANSI sequence spans lines": {
+			bg:                     "Normal \x1b[31mRED\nTEXT\x1b[0m\nNormal",
+			overlay:                "***\n***",
+			row:                    0,
+			col:                    8,
+			ignoreMarginWhitespace: false,
+			want:                   "Normal \x1b[31mR\x1b[0m***\n\x1b[31mTEXT\x1b[0m    ***\nNormal",
+		},
 	}
 
 	for name, tc := range tt {
 		t.Run(name, func(t *testing.T) {
-			result, err := charmutils.Overlay(tc.bg, tc.overlay, tc.row, tc.col, tc.ignoreMarginWhitespace)
+			result, err := Overlay(tc.bg, tc.overlay, tc.row, tc.col, tc.ignoreMarginWhitespace)
 			require.NoError(t, err)
 			assert.Equal(t, tc.want, result)
 		})
